@@ -1,28 +1,16 @@
-using System;
 using Inventor;
 
 namespace DimensionCheckerPlugin
 {
-    public class DimensionChecker : ApplicationAddInServer
+    public class DimensionChecker
     {
         private Inventor.Application _inventorApp;
 
-        // Entry point for the plugin
-        public void Activate(ApplicationAddInSite addInSiteObject, bool firstTime)
+        public void Activate(Inventor.Application inventorApp)
         {
-            _inventorApp = addInSiteObject.Application;
+            _inventorApp = inventorApp;
         }
 
-        public void Deactivate()
-        {
-            _inventorApp = null;
-        }
-
-        public void ExecuteCommand(int commandID) { }
-
-        public object Automation => null;
-
-        // Main logic for dimension comparison
         public void CompareDimensions()
         {
             // Ensure an active document is open
@@ -43,13 +31,19 @@ namespace DimensionCheckerPlugin
 
         private void CompareModelDimensions(PartDocument partDoc)
         {
-            ComponentDefinition compDef = partDoc.ComponentDefinition;
+            PartComponentDefinition compDef = partDoc.ComponentDefinition as PartComponentDefinition;
 
-            // Extract all parameters from the model
-            var parameters = compDef.Parameters;
-            foreach (UserParameter param in parameters.UserParameters)
+            if (compDef != null)
             {
-                Console.WriteLine($"Model Parameter: {param.Name} = {param.Expression}");
+                var parameters = compDef.Parameters;
+                foreach (UserParameter param in parameters.UserParameters)
+                {
+                    _inventorApp.StatusBarText = $"Model Parameter: {param.Name} = {param.Expression}";
+                }
+            }
+            else
+            {
+                _inventorApp.StatusBarText = "Could not access parameters for this document.";
             }
         }
 
@@ -57,15 +51,11 @@ namespace DimensionCheckerPlugin
         {
             foreach (Sheet sheet in drawingDoc.Sheets)
             {
-                foreach (DrawingView view in sheet.DrawingViews)
+                foreach (DrawingDimension dim in sheet.DrawingDimensions)
                 {
-                    foreach (DrawingDimension dim in view.DrawingDimensions)
-                    {
-                        Console.WriteLine($"Drawing Dimension: {dim.Text}");
-                    }
+                    _inventorApp.StatusBarText = $"Drawing Dimension: {dim.Text}";
                 }
             }
         }
     }
 }
-
